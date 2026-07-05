@@ -3,6 +3,9 @@ name: My First Robot
 on:
   workflow_dispatch:
 
+  schedule:
+    - cron: '0 12 * * *'
+
 jobs:
   hello:
     runs-on: ubuntu-latest
