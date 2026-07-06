@@ -1,11 +1,16 @@
 import requests
 
-print("===== Network Test =====")
+url = "https://www.youtube.com/@berrypassnet/videos"
 
-url = "https://www.google.com"
+headers = {
+    "User-Agent": "Mozilla/5.0"
+}
 
-response = requests.get(url)
+response = requests.get(url, headers=headers)
 
-print("Status Code:", response.status_code)
-print("Server:", response.headers.get("server"))
-print("Content Length:", len(response.text))
+print("Status:", response.status_code)
+print("Length:", len(response.text))
+
+print()
+print("===== First 1000 characters =====")
+print(response.text[:1000])
