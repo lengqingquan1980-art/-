@@ -15,4 +15,3 @@ jobs:
         run: |
           echo "Robot Butler"
           echo "Today is $(date)"
-          date
