@@ -1,4 +1,4 @@
-name: My First Robot
+name: Robot Butler
 
 on:
   workflow_dispatch:
