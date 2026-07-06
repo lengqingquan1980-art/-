@@ -10,7 +10,7 @@ jobs:
   hello:
     runs-on: ubuntu-latest
 
-steps:
+   steps:
   - name: Run Python
     run: |
       python robot.py
