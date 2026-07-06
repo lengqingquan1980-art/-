@@ -9,15 +9,18 @@ headers = {
 
 html = requests.get(url, headers=headers).text
 
-print("网页长度：", len(html))
-
-print("\n开始寻找视频ID...\n")
-
 video_ids = re.findall(r'"videoId":"([a-zA-Z0-9_-]{11})"', html)
 
-print("找到数量：", len(video_ids))
+# 去重，并保持原顺序
+unique = []
+
+for vid in video_ids:
+    if vid not in unique:
+        unique.append(vid)
+
+print("共找到", len(unique), "个视频")
 
 print()
 
-for vid in video_ids[:20]:
-    print(vid)
+for i, vid in enumerate(unique, 1):
+    print(f"{i}. https://www.youtube.com/watch?v={vid}")
