@@ -10,8 +10,7 @@ jobs:
   hello:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Say Hello
-        run: |
-          echo "Robot Butler"
-          echo "Today is $(date)"
+steps:
+  - name: Run Python
+    run: |
+      python robot.py
