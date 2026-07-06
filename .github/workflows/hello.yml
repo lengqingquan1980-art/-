@@ -13,6 +13,6 @@ jobs:
     steps:
       - name: Say Hello
         run: |
-          echo "Hello!"
-          echo "My robot is alive."
+          echo "Robot Butler"
+          echo "Today is $(date)"
           date
