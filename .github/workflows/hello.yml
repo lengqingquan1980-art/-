@@ -4,7 +4,10 @@ on:
   workflow_dispatch:
 
   schedule:
-    - cron: '0 12 * * *'
+    - cron: '0 1 * * *'
+
+permissions:
+  contents: write
 
 jobs:
   hello:
@@ -19,3 +22,14 @@ jobs:
 
       - name: Run Python
         run: python robot.py
+
+      - name: Commit updated memory
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+          git add latest_video.txt
+
+          git diff --cached --quiet || git commit -m "Update latest_video.txt"
+
+          git push
