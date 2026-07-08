@@ -113,63 +113,76 @@ print("正在解析真实网址...")
 
 
 
-# 方法1:
-# 找 urlEndpoint 里的真实链接
-
-urls = re.findall(
-    r'"urlEndpoint":\{"url":"(.*?)"',
-    part
-)
+from urllib.parse import urlparse, parse_qs, unquote
 
 
-
-# 方法2:
-# 找普通https
-
-if not urls:
-
-    urls = re.findall(
-        r'https?://[^"\\ ]+',
-        part
-    )
-
-
-
-result=[]
+real_urls = []
 
 
 for u in urls:
 
-    u = u.replace(
-        "\\u0026",
-        "&"
-    )
+    # YouTube redirect解析
 
-    u = u.replace(
-        "\\/",
-        "/"
-    )
+    if "youtube.com/redirect" in u:
 
-    if u not in result:
+        parsed = urlparse(u)
 
-        result.append(u)
+        params = parse_qs(parsed.query)
+
+        if "q" in params:
+
+            real = params["q"][0]
+
+            real = unquote(real)
+
+            real_urls.append(real)
+
+
+    else:
+
+        real_urls.append(u)
 
 
 
 print()
-print("找到网址数量:")
-print(len(result))
+print("真实网址:")
 
 
+for i,u in enumerate(real_urls,1):
 
-for i,u in enumerate(result,1):
-
-    print()
     print(i,u)
 
 
 
-# 保存
+# 自动跟踪短链接
+
+final_urls=[]
+
+
+for u in real_urls:
+
+    try:
+
+        r=requests.get(
+            u,
+            headers=headers,
+            allow_redirects=True,
+            timeout=15
+        )
+
+        print()
+        print("跳转:")
+        print(r.url)
+
+
+        final_urls.append(r.url)
+
+
+    except Exception as e:
+
+        print(e)
+
+
 
 with open(
     "links.txt",
@@ -177,10 +190,5 @@ with open(
     encoding="utf-8"
 ) as f:
 
-    for u in result:
+    for u in final_urls:
         f.write(u+"\n")
-
-
-
-print()
-print("完成，已保存 links.txt")
