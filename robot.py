@@ -4,7 +4,7 @@ from urllib.parse import unquote
 
 
 # =========================
-# 频道地址
+# 配置
 # =========================
 
 CHANNEL = "https://www.youtube.com/@SFZY666/videos"
@@ -14,6 +14,7 @@ headers = {
     "User-Agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 }
+
 
 
 # =========================
@@ -61,16 +62,16 @@ if len(unique) == 0:
 latest = unique[0]
 
 
-print()
-print("最新视频ID:")
-print(latest)
-
-
-
 video_url = (
     "https://www.youtube.com/watch?v="
     + latest
 )
+
+
+
+print()
+print("最新视频ID:")
+print(latest)
 
 
 print()
@@ -80,7 +81,7 @@ print(video_url)
 
 
 # =========================
-# 读取视频页面
+# 获取视频页面
 # =========================
 
 
@@ -103,7 +104,7 @@ print(len(video_html))
 
 
 # =========================
-# 搜索关键词
+# 查找关键词
 # =========================
 
 
@@ -128,80 +129,60 @@ print("找到关键词！")
 
 
 
-# 取附近内容
-
-part = video_html[
-    pos:
-    pos + 2000
-]
-
+# =========================
+# 搜索完整网址
+# =========================
 
 
 print()
-print("开始解析网址...")
+print("正在搜索完整网址...")
 
 
 
-# =========================
-# 提取网址
-# =========================
+# 处理 YouTube 转义
+
+clean_html = video_html.replace(
+    "\\/",
+    "/"
+)
 
 
-urls = re.findall(
-    r'https?://[^\s"\\<>]+',
-    part
+clean_html = clean_html.replace(
+    "\\u0026",
+    "&"
 )
 
 
 
-results = []
-
-
-
-for u in urls:
-
-
-    u = unquote(u)
-
-
-    u = u.replace(
-        "\\u0026",
-        "&"
-    )
-
-
-    u = u.replace(
-        "\\/",
-        "/"
-    )
-
-
-    if "skill-note.blogspot.com" in u:
-
-        results.append(u)
+urls = re.findall(
+    r'https?://skill-note\.blogspot\.com/[a-zA-Z0-9_/?=&%.\-]+',
+    clean_html
+)
 
 
 
 # 去重
 
-final = []
+results = []
 
 
-for u in results:
+for u in urls:
 
-    if u not in final:
+    u = unquote(u)
 
-        final.append(u)
+    if u not in results:
+
+        results.append(u)
 
 
 
 print()
-print("找到真实网址数量:")
-print(len(final))
+print("找到网址数量:")
+print(len(results))
 
 
 
-for i,u in enumerate(final,1):
+for i,u in enumerate(results,1):
 
     print(
         i,
@@ -221,8 +202,7 @@ with open(
     encoding="utf-8"
 ) as f:
 
-
-    for u in final:
+    for u in results:
 
         f.write(
             u + "\n"
