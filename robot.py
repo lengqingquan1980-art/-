@@ -1,7 +1,5 @@
 import requests
 import re
-import json
-import os
 from urllib.parse import urlparse, parse_qs, unquote
 
 # 频道地址
@@ -47,12 +45,17 @@ try:
     print("\n找到关键词！")
 
     content_part = video_html[pos:pos + 10000]
+
+
+    print("\n=====关键词附近内容测试=====")
+    print(content_part[:3000])
+    print("=====测试结束=====")
     
     
     # 提取所有YouTube跳转链接
     urls = re.findall(
-        r'https://www\.youtube\.com/redirect\?[^"\\]+',
-        video_html
+        r'https?://www\.youtube\.com/redirect\?[^"\s]+',
+        video_html.replace("\\/", "/")
     )
     
     if not urls:
