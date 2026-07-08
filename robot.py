@@ -4,7 +4,7 @@ from urllib.parse import urlparse, parse_qs, unquote
 
 
 # =========================
-# 配置
+# 设置
 # =========================
 
 CHANNEL = "https://www.youtube.com/@SFZY666/videos"
@@ -17,8 +17,9 @@ headers = {
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 "
     "(KHTML, like Gecko) "
-    "Chrome/120.0 Safari/537.36"
+    "Chrome/120 Safari/537.36"
 }
+
 
 
 # =========================
@@ -35,13 +36,16 @@ html = requests.get(
 ).text
 
 
+
 video_ids = re.findall(
     r'"videoId":"([a-zA-Z0-9_-]{11})"',
     html
 )
 
 
+
 unique = []
+
 
 for vid in video_ids:
 
@@ -53,7 +57,8 @@ for vid in video_ids:
 print("找到视频数量:", len(unique))
 
 
-if len(unique) == 0:
+
+if not unique:
 
     print("没有找到视频")
 
@@ -83,7 +88,7 @@ print(video_url)
 
 
 # =========================
-# 获取视频页面
+# 读取视频介绍
 # =========================
 
 print()
@@ -97,6 +102,7 @@ video_html = requests.get(
 ).text
 
 
+
 print()
 print("页面长度:")
 print(len(video_html))
@@ -106,9 +112,9 @@ print(len(video_html))
 pos = video_html.find(KEYWORD)
 
 
+
 if pos == -1:
 
-    print()
     print("没有找到关键词")
 
     exit()
@@ -120,24 +126,23 @@ print("找到关键词!")
 
 
 
-# 只看关键词附近
+# 关键词附近
 part = video_html[
     pos:
-    pos + 5000
+    pos + 8000
 ]
 
 
+
+# =========================
+# 提取 youtube redirect
+# =========================
 
 print()
 print("正在解析网址...")
 
 
-
-# =========================
-# 找 youtube redirect
-# =========================
-
-redirects = re.findall(
+redirect_urls = re.findall(
     r'https://www\.youtube\.com/redirect\?[^"]+',
     part
 )
@@ -146,12 +151,14 @@ redirects = re.findall(
 
 real_urls = []
 
+seen = set()
 
 
-for url in redirects:
+
+for url in redirect_urls:
 
 
-    # 修复转义
+    # 修复youtube转义
 
     url = url.replace(
         "\\u0026",
@@ -165,6 +172,7 @@ for url in redirects:
     params = parse_qs(
         parsed.query
     )
+
 
 
     if "q" in params:
@@ -181,16 +189,19 @@ for url in redirects:
         )
 
 
-        # ★关键修复
-        # 删除 YouTube 自己的 v 参数
+        # 删除youtube自己的参数
 
         real = real.split(
             "&v="
         )[0]
 
 
-        real_urls.append(real)
 
+        if real not in seen:
+
+            seen.add(real)
+
+            real_urls.append(real)
 
 
 
@@ -210,6 +221,58 @@ for i,u in enumerate(real_urls,1):
 
 
 # =========================
+# 跟踪短链接
+# =========================
+
+
+print()
+print("正在打开短链接...")
+
+
+final_urls = []
+
+
+for url in real_urls:
+
+
+    try:
+
+
+        r = requests.get(
+            url,
+            headers=headers,
+            allow_redirects=True,
+            timeout=20
+        )
+
+
+        final = r.url
+
+
+
+        if final not in final_urls:
+
+            final_urls.append(final)
+
+
+
+        print()
+        print("跳转:")
+        print(final)
+
+
+
+    except Exception as e:
+
+
+        print(
+            "失败:",
+            url
+        )
+
+
+
+# =========================
 # 保存
 # =========================
 
@@ -221,10 +284,10 @@ with open(
 ) as f:
 
 
-    for u in real_urls:
+    for url in final_urls:
 
         f.write(
-            u + "\n"
+            url + "\n"
         )
 
 
