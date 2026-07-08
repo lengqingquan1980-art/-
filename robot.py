@@ -3,10 +3,6 @@ import re
 from urllib.parse import unquote
 
 
-# =========================
-# 配置
-# =========================
-
 CHANNEL = "https://www.youtube.com/@SFZY666/videos"
 
 
@@ -15,11 +11,6 @@ headers = {
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 }
 
-
-
-# =========================
-# 获取最新视频
-# =========================
 
 print("正在获取频道页面...")
 
@@ -32,10 +23,13 @@ html = requests.get(
 
 
 
+# 找视频ID
+
 video_ids = re.findall(
     r'"videoId":"([a-zA-Z0-9_-]{11})"',
     html
 )
+
 
 
 unique = []
@@ -44,6 +38,7 @@ unique = []
 for vid in video_ids:
 
     if vid not in unique:
+
         unique.append(vid)
 
 
@@ -51,7 +46,7 @@ for vid in video_ids:
 print("找到视频数量:", len(unique))
 
 
-if len(unique) == 0:
+if not unique:
 
     print("没有找到视频")
 
@@ -80,10 +75,7 @@ print(video_url)
 
 
 
-# =========================
 # 获取视频页面
-# =========================
-
 
 print()
 print("正在读取视频介绍...")
@@ -103,11 +95,6 @@ print(len(video_html))
 
 
 
-# =========================
-# 查找关键词
-# =========================
-
-
 keyword = "最新免费节点获取地址"
 
 
@@ -117,7 +104,6 @@ pos = video_html.find(keyword)
 
 if pos == -1:
 
-    print()
     print("没有找到关键词")
 
     exit()
@@ -130,54 +116,83 @@ print("找到关键词！")
 
 
 # =========================
-# 搜索完整网址
+# 调试附近源码
 # =========================
 
 
 print()
-print("正在搜索完整网址...")
+print("=====关键词附近源码=====")
+
+
+near = video_html[
+    pos:
+    pos + 10000
+]
+
+
+print(near)
+
+
+print("=====源码结束=====")
 
 
 
-# 处理 YouTube 转义
+# =========================
+# 清理转义
+# =========================
 
-clean_html = video_html.replace(
+
+clean = video_html
+
+
+clean = clean.replace(
     "\\/",
     "/"
 )
 
 
-clean_html = clean_html.replace(
+clean = clean.replace(
     "\\u0026",
     "&"
 )
 
 
 
+clean = unquote(clean)
+
+
+
+# =========================
+# 查找完整网址
+# =========================
+
+
+print()
+print("正在搜索完整地址...")
+
+
 urls = re.findall(
-    r'https?://skill-note\.blogspot\.com/[a-zA-Z0-9_/?=&%.\-]+',
-    clean_html
+    r'https?://skill-note\.blogspot\.com/[^\s"<>\\]+',
+    clean
 )
 
 
-
-# 去重
 
 results = []
 
 
 for u in urls:
 
-    u = unquote(u)
+    if "..." not in u:
 
-    if u not in results:
+        if u not in results:
 
-        results.append(u)
+            results.append(u)
 
 
 
 print()
-print("找到网址数量:")
+print("找到完整网址数量:")
 print(len(results))
 
 
@@ -191,10 +206,7 @@ for i,u in enumerate(results,1):
 
 
 
-# =========================
 # 保存
-# =========================
-
 
 with open(
     "links.txt",
@@ -205,7 +217,7 @@ with open(
     for u in results:
 
         f.write(
-            u + "\n"
+            u+"\n"
         )
 
 
