@@ -1,13 +1,10 @@
 import requests
 import re
-from urllib.parse import unquote
+import json
+import os
 
 
-# ==========================
-# 目标频道
-# ==========================
-
-channel_url = "https://www.youtube.com/@SFZY666/videos"
+CHANNEL = "https://www.youtube.com/@SFZY666/videos"
 
 
 headers = {
@@ -15,22 +12,17 @@ headers = {
 }
 
 
-# ==========================
-# 获取频道页面
-# ==========================
-
 print("正在获取频道页面...")
 
+
 html = requests.get(
-    channel_url,
+    CHANNEL,
     headers=headers
 ).text
 
 
 
-# ==========================
-# 提取视频ID
-# ==========================
+# 找视频ID
 
 video_ids = re.findall(
     r'"videoId":"([a-zA-Z0-9_-]{11})"',
@@ -38,40 +30,28 @@ video_ids = re.findall(
 )
 
 
-# 去重
-
 unique = []
 
-for vid in video_ids:
-    if vid not in unique:
-        unique.append(vid)
+for v in video_ids:
+    if v not in unique:
+        unique.append(v)
 
 
 
-print()
 print("找到视频数量:", len(unique))
 
 
-if len(unique) == 0:
-    print("没有找到视频")
-    exit()
-
-
-
-# 最新视频
-
-latest_video = unique[0]
+latest = unique[0]
 
 
 print()
 print("最新视频ID:")
-print(latest_video)
-
+print(latest)
 
 
 video_url = (
     "https://www.youtube.com/watch?v="
-    + latest_video
+    + latest
 )
 
 
@@ -80,10 +60,6 @@ print("视频地址:")
 print(video_url)
 
 
-
-# ==========================
-# 获取视频页面
-# ==========================
 
 print()
 print("正在读取视频介绍...")
@@ -102,99 +78,109 @@ print(len(video_html))
 
 
 
-# ==========================
-# 查找关键词
-# ==========================
-
 keyword = "最新免费节点获取地址"
 
 
-print()
+pos = video_html.find(keyword)
 
 
-if keyword not in video_html:
 
+if pos == -1:
+
+    print()
     print("没有找到关键词")
+
     exit()
 
 
 
+print()
 print("找到关键词！")
 
 
 
-# ==========================
-# 提取 YouTube redirect 链接
-# ==========================
+# 取关键词附近区域
+
+part = video_html[
+    pos:
+    pos + 3000
+]
+
+
 
 print()
 print("正在解析真实网址...")
 
 
-redirects = re.findall(
-    r'https://www\.youtube\.com/redirect\?[^"\\]+',
-    video_html
+
+# 方法1:
+# 找 urlEndpoint 里的真实链接
+
+urls = re.findall(
+    r'"urlEndpoint":\{"url":"(.*?)"',
+    part
 )
 
 
 
-real_urls = []
+# 方法2:
+# 找普通https
 
+if not urls:
 
-
-for redirect in redirects:
-
-
-    # 找 q 参数
-
-    match = re.search(
-        r'[?&]q=([^&\\]+)',
-        redirect
+    urls = re.findall(
+        r'https?://[^"\\ ]+',
+        part
     )
 
 
-    if match:
 
-        url = match.group(1)
-
-
-        # 处理编码
-
-        url = url.replace(
-            "\\u0026",
-            "&"
-        )
+result=[]
 
 
-        url = unquote(url)
+for u in urls:
 
+    u = u.replace(
+        "\\u0026",
+        "&"
+    )
 
+    u = u.replace(
+        "\\/",
+        "/"
+    )
 
-        if url not in real_urls:
+    if u not in result:
 
-            real_urls.append(url)
+        result.append(u)
 
-
-
-# ==========================
-# 输出结果
-# ==========================
 
 
 print()
+print("找到网址数量:")
+print(len(result))
 
 
-if len(real_urls) == 0:
 
-    print("没有找到真实网址")
+for i,u in enumerate(result,1):
 
-
-else:
-
-    print("找到真实网址:")
+    print()
+    print(i,u)
 
 
-    for url in real_urls:
 
-        print()
-        print(url)
+# 保存
+
+with open(
+    "links.txt",
+    "w",
+    encoding="utf-8"
+) as f:
+
+    for u in result:
+        f.write(u+"\n")
+
+
+
+print()
+print("完成，已保存 links.txt")
