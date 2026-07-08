@@ -1,16 +1,29 @@
 import requests
 import re
-from urllib.parse import unquote
+from urllib.parse import urlparse, parse_qs, unquote
 
+
+# =========================
+# 配置
+# =========================
 
 CHANNEL = "https://www.youtube.com/@SFZY666/videos"
+
+KEYWORD = "最新免费节点获取地址"
 
 
 headers = {
     "User-Agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 "
+    "(KHTML, like Gecko) "
+    "Chrome/120.0 Safari/537.36"
 }
 
+
+# =========================
+# 获取最新视频
+# =========================
 
 print("正在获取频道页面...")
 
@@ -22,23 +35,17 @@ html = requests.get(
 ).text
 
 
-
-# 找视频ID
-
 video_ids = re.findall(
     r'"videoId":"([a-zA-Z0-9_-]{11})"',
     html
 )
 
 
-
 unique = []
-
 
 for vid in video_ids:
 
     if vid not in unique:
-
         unique.append(vid)
 
 
@@ -46,7 +53,7 @@ for vid in video_ids:
 print("找到视频数量:", len(unique))
 
 
-if not unique:
+if len(unique) == 0:
 
     print("没有找到视频")
 
@@ -57,16 +64,16 @@ if not unique:
 latest = unique[0]
 
 
+print()
+print("最新视频ID:")
+print(latest)
+
+
+
 video_url = (
     "https://www.youtube.com/watch?v="
     + latest
 )
-
-
-
-print()
-print("最新视频ID:")
-print(latest)
 
 
 print()
@@ -75,7 +82,9 @@ print(video_url)
 
 
 
+# =========================
 # 获取视频页面
+# =========================
 
 print()
 print("正在读取视频介绍...")
@@ -88,22 +97,18 @@ video_html = requests.get(
 ).text
 
 
-
 print()
 print("页面长度:")
 print(len(video_html))
 
 
 
-keyword = "最新免费节点获取地址"
-
-
-pos = video_html.find(keyword)
-
+pos = video_html.find(KEYWORD)
 
 
 if pos == -1:
 
+    print()
     print("没有找到关键词")
 
     exit()
@@ -111,93 +116,91 @@ if pos == -1:
 
 
 print()
-print("找到关键词！")
+print("找到关键词!")
 
 
 
-# =========================
-# 调试附近源码
-# =========================
-
-
-print()
-print("=====关键词附近源码=====")
-
-
-near = video_html[
+# 只看关键词附近
+part = video_html[
     pos:
-    pos + 10000
+    pos + 5000
 ]
 
 
-print(near)
 
-
-print("=====源码结束=====")
+print()
+print("正在解析网址...")
 
 
 
 # =========================
-# 清理转义
+# 找 youtube redirect
 # =========================
 
-
-clean = video_html
-
-
-clean = clean.replace(
-    "\\/",
-    "/"
-)
-
-
-clean = clean.replace(
-    "\\u0026",
-    "&"
+redirects = re.findall(
+    r'https://www\.youtube\.com/redirect\?[^"]+',
+    part
 )
 
 
 
-clean = unquote(clean)
+real_urls = []
 
 
 
-# =========================
-# 查找完整网址
-# =========================
+for url in redirects:
+
+
+    # 修复转义
+
+    url = url.replace(
+        "\\u0026",
+        "&"
+    )
+
+
+    parsed = urlparse(url)
+
+
+    params = parse_qs(
+        parsed.query
+    )
+
+
+    if "q" in params:
+
+
+        real = unquote(
+            params["q"][0]
+        )
+
+
+        real = real.replace(
+            "\\/",
+            "/"
+        )
+
+
+        # ★关键修复
+        # 删除 YouTube 自己的 v 参数
+
+        real = real.split(
+            "&v="
+        )[0]
+
+
+        real_urls.append(real)
+
+
 
 
 print()
-print("正在搜索完整地址...")
-
-
-urls = re.findall(
-    r'https?://skill-note\.blogspot\.com/[^\s"<>\\]+',
-    clean
-)
+print("找到真实网址数量:")
+print(len(real_urls))
 
 
 
-results = []
-
-
-for u in urls:
-
-    if "..." not in u:
-
-        if u not in results:
-
-            results.append(u)
-
-
-
-print()
-print("找到完整网址数量:")
-print(len(results))
-
-
-
-for i,u in enumerate(results,1):
+for i,u in enumerate(real_urls,1):
 
     print(
         i,
@@ -206,7 +209,10 @@ for i,u in enumerate(results,1):
 
 
 
+# =========================
 # 保存
+# =========================
+
 
 with open(
     "links.txt",
@@ -214,10 +220,11 @@ with open(
     encoding="utf-8"
 ) as f:
 
-    for u in results:
+
+    for u in real_urls:
 
         f.write(
-            u+"\n"
+            u + "\n"
         )
 
 
