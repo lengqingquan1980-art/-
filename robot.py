@@ -46,12 +46,17 @@ try:
         exit(0)
     print("\n找到关键词！")
 
-    # 截取关键词后3000字符
     content_part = video_html[pos:pos + 10000]
-    # 正则提取页面内所有http/https链接（修复缺失urls变量）
-    urls = re.findall(r'https?://[^\s"\']+', content_part)
+    
+    
+    # 提取所有YouTube跳转链接
+    urls = re.findall(
+        r'https://www\.youtube\.com/redirect\?[^"\\]+',
+        video_html
+    )
+    
     if not urls:
-        print("关键词附近未找到任何链接")
+        print("没有找到跳转链接")
         exit(0)
 
     # 解析youtube跳转链接
