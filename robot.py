@@ -1,5 +1,6 @@
 import requests
 import re
+from urllib.parse import unquote
 
 
 # ==========================
@@ -26,6 +27,7 @@ html = requests.get(
 ).text
 
 
+
 # ==========================
 # 提取视频ID
 # ==========================
@@ -45,6 +47,7 @@ for vid in video_ids:
         unique.append(vid)
 
 
+
 print()
 print("找到视频数量:", len(unique))
 
@@ -52,6 +55,7 @@ print("找到视频数量:", len(unique))
 if len(unique) == 0:
     print("没有找到视频")
     exit()
+
 
 
 # 最新视频
@@ -62,6 +66,7 @@ latest_video = unique[0]
 print()
 print("最新视频ID:")
 print(latest_video)
+
 
 
 video_url = (
@@ -88,6 +93,7 @@ video_html = requests.get(
     video_url,
     headers=headers
 ).text
+
 
 
 print()
@@ -118,56 +124,77 @@ print("找到关键词！")
 
 
 # ==========================
-# 提取关键词附近内容
-# ==========================
-
-index = video_html.find(keyword)
-
-
-text = video_html[index:index + 5000]
-
-
-
-# ==========================
-# 提取URL
+# 提取 YouTube redirect 链接
 # ==========================
 
 print()
-print("开始寻找网址...")
+print("正在解析真实网址...")
 
 
-urls = re.findall(
-    r'https?://[^"\\\s<>]+',
-    text
+redirects = re.findall(
+    r'https://www\.youtube\.com/redirect\?[^"\\]+',
+    video_html
 )
 
 
 
-# 去重
+real_urls = []
 
-url_list = []
 
-for url in urls:
 
-    if url not in url_list:
-        url_list.append(url)
+for redirect in redirects:
 
+
+    # 找 q 参数
+
+    match = re.search(
+        r'[?&]q=([^&\\]+)',
+        redirect
+    )
+
+
+    if match:
+
+        url = match.group(1)
+
+
+        # 处理编码
+
+        url = url.replace(
+            "\\u0026",
+            "&"
+        )
+
+
+        url = unquote(url)
+
+
+
+        if url not in real_urls:
+
+            real_urls.append(url)
+
+
+
+# ==========================
+# 输出结果
+# ==========================
 
 
 print()
 
 
-if len(url_list) == 0:
+if len(real_urls) == 0:
 
-    print("没有找到网址")
+    print("没有找到真实网址")
 
 
 else:
 
-    print("找到网址数量:", len(url_list))
+    print("找到真实网址:")
 
 
-    for i, url in enumerate(url_list, 1):
+    for url in real_urls:
 
         print()
-        print(i, url)
+        print(url)
