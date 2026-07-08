@@ -110,6 +110,13 @@ part = video_html[
 from urllib.parse import urlparse, parse_qs, unquote
 
 
+# 先从关键词附近内容提取网址
+urls = re.findall(
+    r'https?://[^\s"\']+',
+    content_part
+)
+
+
 real_urls = []
 
 
