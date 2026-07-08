@@ -1,30 +1,16 @@
 import requests
 import re
-from urllib.parse import urlparse, parse_qs, unquote
+from urllib.parse import unquote
 
-
-# =========================
-# 设置
-# =========================
 
 CHANNEL = "https://www.youtube.com/@SFZY666/videos"
-
-KEYWORD = "最新免费节点获取地址"
 
 
 headers = {
     "User-Agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 "
-    "(KHTML, like Gecko) "
-    "Chrome/120 Safari/537.36"
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 }
 
-
-
-# =========================
-# 获取最新视频
-# =========================
 
 print("正在获取频道页面...")
 
@@ -36,6 +22,8 @@ html = requests.get(
 ).text
 
 
+
+# 找视频ID
 
 video_ids = re.findall(
     r'"videoId":"([a-zA-Z0-9_-]{11})"',
@@ -50,12 +38,12 @@ unique = []
 for vid in video_ids:
 
     if vid not in unique:
+
         unique.append(vid)
 
 
 
 print("找到视频数量:", len(unique))
-
 
 
 if not unique:
@@ -69,16 +57,16 @@ if not unique:
 latest = unique[0]
 
 
-print()
-print("最新视频ID:")
-print(latest)
-
-
-
 video_url = (
     "https://www.youtube.com/watch?v="
     + latest
 )
+
+
+
+print()
+print("最新视频ID:")
+print(latest)
 
 
 print()
@@ -87,9 +75,7 @@ print(video_url)
 
 
 
-# =========================
-# 读取视频介绍
-# =========================
+# 获取视频页面
 
 print()
 print("正在读取视频介绍...")
@@ -109,7 +95,10 @@ print(len(video_html))
 
 
 
-pos = video_html.find(KEYWORD)
+keyword = "最新免费节点获取地址"
+
+
+pos = video_html.find(keyword)
 
 
 
@@ -122,96 +111,93 @@ if pos == -1:
 
 
 print()
-print("找到关键词!")
+print("找到关键词！")
 
 
 
-# 关键词附近
-part = video_html[
+# =========================
+# 调试附近源码
+# =========================
+
+
+print()
+print("=====关键词附近源码=====")
+
+
+near = video_html[
     pos:
-    pos + 8000
+    pos + 10000
 ]
 
 
+print(near)
+
+
+print("=====源码结束=====")
+
+
 
 # =========================
-# 提取 youtube redirect
+# 清理转义
 # =========================
 
-print()
-print("正在解析网址...")
+
+clean = video_html
 
 
-redirect_urls = re.findall(
-    r'https://www\.youtube\.com/redirect\?[^"]+',
-    part
+clean = clean.replace(
+    "\\/",
+    "/"
+)
+
+
+clean = clean.replace(
+    "\\u0026",
+    "&"
 )
 
 
 
-real_urls = []
-
-seen = set()
+clean = unquote(clean)
 
 
 
-for url in redirect_urls:
+# =========================
+# 查找完整网址
+# =========================
 
 
-    # 修复youtube转义
-
-    url = url.replace(
-        "\\u0026",
-        "&"
-    )
+print()
+print("正在搜索完整地址...")
 
 
-    parsed = urlparse(url)
-
-
-    params = parse_qs(
-        parsed.query
-    )
+urls = re.findall(
+    r'https?://skill-note\.blogspot\.com/[^\s"<>\\]+',
+    clean
+)
 
 
 
-    if "q" in params:
+results = []
 
 
-        real = unquote(
-            params["q"][0]
-        )
+for u in urls:
 
+    if "..." not in u:
 
-        real = real.replace(
-            "\\/",
-            "/"
-        )
+        if u not in results:
 
-
-        # 删除youtube自己的参数
-
-        real = real.split(
-            "&v="
-        )[0]
-
-
-
-        if real not in seen:
-
-            seen.add(real)
-
-            real_urls.append(real)
+            results.append(u)
 
 
 
 print()
-print("找到真实网址数量:")
-print(len(real_urls))
+print("找到完整网址数量:")
+print(len(results))
 
 
 
-for i,u in enumerate(real_urls,1):
+for i,u in enumerate(results,1):
 
     print(
         i,
@@ -220,62 +206,7 @@ for i,u in enumerate(real_urls,1):
 
 
 
-# =========================
-# 跟踪短链接
-# =========================
-
-
-print()
-print("正在打开短链接...")
-
-
-final_urls = []
-
-
-for url in real_urls:
-
-
-    try:
-
-
-        r = requests.get(
-            url,
-            headers=headers,
-            allow_redirects=True,
-            timeout=20
-        )
-
-
-        final = r.url
-
-
-
-        if final not in final_urls:
-
-            final_urls.append(final)
-
-
-
-        print()
-        print("跳转:")
-        print(final)
-
-
-
-    except Exception as e:
-
-
-        print(
-            "失败:",
-            url
-        )
-
-
-
-# =========================
 # 保存
-# =========================
-
 
 with open(
     "links.txt",
@@ -283,11 +214,10 @@ with open(
     encoding="utf-8"
 ) as f:
 
-
-    for url in final_urls:
+    for u in results:
 
         f.write(
-            url + "\n"
+            u+"\n"
         )
 
 
